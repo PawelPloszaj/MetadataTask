@@ -4,12 +4,17 @@ namespace Import.Helpers.Fivetran;
 
 public class RestApiManagerWrapper(RestApiManager restApiManager, string groupId) : IDisposable
 {
-    public RestApiManager RestApiManager { get; } = restApiManager;
-    public string GroupId { get; } = groupId;
+    private bool _disposed;
+    public RestApiManager RestApiManager { get; } = restApiManager ?? throw new ArgumentNullException(nameof(restApiManager));
+    public string GroupId { get; } = groupId ?? throw new ArgumentNullException(nameof(groupId));
 
     public void Dispose()
     {
-        this.RestApiManager.Dispose();
+        if (!_disposed)
+        {
+            this.RestApiManager.Dispose();
+            _disposed = true;
+        }
         GC.SuppressFinalize(this);
     }
 }
