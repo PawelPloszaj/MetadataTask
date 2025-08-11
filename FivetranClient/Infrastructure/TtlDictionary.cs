@@ -1,19 +1,28 @@
-﻿namespace FivetranClient.Infrastructure;
+﻿using System.Collections.Concurrent;
+
+namespace FivetranClient.Infrastructure;
 
 public class TtlDictionary<TKey, TValue> where TKey : notnull
 {
-    private readonly Dictionary<TKey, (TValue, DateTime)> _dictionary = new();
+    private readonly ConcurrentDictionary<TKey, (TValue Value, DateTime ExpiryDateTime)> _dictionary = new();
+
+    public async Task<TValue> GetOrAddAsync(TKey key, Func<Task<TValue>> valueFactory, TimeSpan ttl)
+    {
+        if (_dictionary.TryGetValue(key, out var entry) && DateTime.UtcNow < entry.ExpiryDateTime)
+        {
+            return entry.Value;
+        }
+
+        var value = await valueFactory();
+        _dictionary[key] = (value, DateTime.UtcNow.Add(ttl));
+        return value;
+    }
 
     public TValue GetOrAdd(TKey key, Func<TValue> valueFactory, TimeSpan ttl)
     {
-        if (_dictionary.TryGetValue(key, out var entry))
+        if (_dictionary.TryGetValue(key, out var entry) && DateTime.UtcNow < entry.ExpiryDateTime)
         {
-            if (DateTime.UtcNow < entry.Item2)
-            {
-                return entry.Item1;
-            }
-
-            _dictionary.Remove(key);
+            return entry.Value;
         }
 
         var value = valueFactory();
@@ -23,9 +32,9 @@ public class TtlDictionary<TKey, TValue> where TKey : notnull
 
     public bool TryGetValue(TKey key, out TValue value)
     {
-        if (_dictionary.TryGetValue(key, out var entry) && DateTime.UtcNow < entry.Item2)
+        if (_dictionary.TryGetValue(key, out var entry) && DateTime.UtcNow < entry.ExpiryDateTime)
         {
-            value = entry.Item1;
+            value = entry.Value;
             return true;
         }
 
