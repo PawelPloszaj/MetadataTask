@@ -7,6 +7,7 @@ namespace FivetranClient;
 
 public class RestApiManager(HttpRequestHandler requestHandler) : IDisposable
 {
+    private bool _disposed;
     private readonly PaginatedFetcher _paginatedFetcher = new(requestHandler);
     private readonly NonPaginatedFetcher _nonPaginatedFetcher = new(requestHandler);
     // Indicates whether this instance owns the HttpClient and should dispose it.
@@ -52,7 +53,11 @@ public class RestApiManager(HttpRequestHandler requestHandler) : IDisposable
 
     public void Dispose()
     {
-        _createdClient?.Dispose();
+        if (!_disposed)
+        {
+            _createdClient?.Dispose();
+            _disposed = true;
+        }
         GC.SuppressFinalize(this);
     }
 }
