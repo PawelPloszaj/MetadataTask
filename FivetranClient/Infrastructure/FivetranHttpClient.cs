@@ -7,6 +7,10 @@ public class FivetranHttpClient : HttpClient
 {
     public FivetranHttpClient(Uri baseAddress, string apiKey, string apiSecret, TimeSpan timeout)
     {
+        if (baseAddress is null) throw new ArgumentNullException(nameof(baseAddress));
+        if (string.IsNullOrWhiteSpace(apiKey)) throw new ArgumentNullException("API key must be provided", nameof(apiKey));
+        if (string.IsNullOrWhiteSpace(apiSecret)) throw new ArgumentNullException("API secret must be provided", nameof(apiSecret));
+
         if (timeout.Ticks <= 0)
             throw new ArgumentOutOfRangeException(nameof(timeout), "Timeout must be a positive value");
 
